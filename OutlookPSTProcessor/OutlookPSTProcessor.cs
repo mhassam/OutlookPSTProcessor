@@ -2,8 +2,6 @@
 using System.Data;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Aspose.Email.Storage.Pst;
-using Microsoft.Office.Interop.Outlook;
 using Exception = System.Exception;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -56,26 +54,6 @@ namespace OutlookPSTProcessor
                 //If Outlook is not installed on the system, won't able to use Microsoft.Office.Interop.Outlook
                 //to directly process the PST file, as it relies on Outlook.
                 //In this case, use a third-party library Aspose.Email to handle PST files without Outlook.
-
-                //PersonalStorage pst = PersonalStorage.FromFile(filePath);
-
-                //// Access the root folder
-                //FolderInfo rootFolder = pst.RootFolder;
-
-                //// Process items in the folder
-                //foreach (MessageInfo messageInfo in rootFolder.EnumerateMessages())
-                //{
-                //    DataRow row = dataTable.NewRow();
-                //    row["Subject"] = messageInfo.Subject;
-                //    row["Sender"] = messageInfo.SenderRepresentativeName;
-                //    // Populate other columns
-
-                //    dataTable.Rows.Add(row);
-                //}
-
-                //// Release Aspose.Email objects
-                //pst.Dispose();
-
 
                 // Uncomment it. In Case of Microsoft.Office.Interop.Outlook and Outlook Installed
 
