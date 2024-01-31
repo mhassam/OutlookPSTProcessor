@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Data;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -31,7 +32,7 @@ namespace OutlookPSTProcessor
 
         private void btnUploadOutlookPst_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            using (System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog())
             {
                 openFileDialog.Filter = "Outlook PST Files|*.pst";
                 openFileDialog.Title = "Select PST Files";
@@ -54,41 +55,54 @@ namespace OutlookPSTProcessor
                 //If Outlook is not installed on the system, won't able to use Microsoft.Office.Interop.Outlook
                 //to directly process the PST file, as it relies on Outlook.
                 //In this case, use a third-party library Aspose.Email to handle PST files without Outlook.
-
-                // Uncomment it. In Case of Microsoft.Office.Interop.Outlook and Outlook Installed
-
-                Outlook.Application outlookApp = new Outlook.Application();
-                Outlook.NameSpace outlookNamespace = outlookApp.GetNamespace("MAPI");
-
-                // Load the PST file
-                Outlook.Folder folder = outlookNamespace.Folders.Add(filePath) as Outlook.Folder;
-
-                // Process items in the folder
-                foreach (Outlook.MailItem mailItem in folder.Items)
+                if (IsOutlookInstalled())
                 {
-                    DataRow row = dataTable.NewRow();
-                    row["From"] = mailItem.SenderName;
-                    row["To"] = mailItem.To;
-                    row["Subject"] = mailItem.Subject;
-                    row["Body"] = mailItem.Body;
-                    // Populate other columns
+                    Outlook.Application outlookApp = new Outlook.Application();
+                    Outlook.NameSpace outlookNamespace = outlookApp.GetNamespace("MAPI");
 
-                    dataTable.Rows.Add(row);
+                    // Load the PST file
+                    Outlook.Folder folder = outlookNamespace.Folders.Add(filePath) as Outlook.Folder;
+
+                    // Process items in the folder
+                    foreach (Outlook.MailItem mailItem in folder.Items)
+                    {
+                        DataRow row = dataTable.NewRow();
+                        row["From"] = mailItem.SenderName;
+                        row["To"] = mailItem.To;
+                        row["Subject"] = mailItem.Subject;
+                        row["Body"] = mailItem.Body;
+                        // Populate other columns
+
+                        dataTable.Rows.Add(row);
+                    }
+
+                    var emailAddresses = GetEmailAddressesFromFolder(folder);
+
+                    DisplayEmailAddresses(emailAddresses);
+
+                    // Release Outlook objects
+                    Marshal.ReleaseComObject(folder);
+                    Marshal.ReleaseComObject(outlookNamespace);
+                    Marshal.ReleaseComObject(outlookApp);
                 }
-
-                var emailAddresses = GetEmailAddressesFromFolder(folder);
-
-                DisplayEmailAddresses(emailAddresses);
-
-                // Release Outlook objects
-                Marshal.ReleaseComObject(folder);
-                Marshal.ReleaseComObject(outlookNamespace);
-                Marshal.ReleaseComObject(outlookApp);
+                else
+                {
+                    MessageBox.Show($"First Install Outlook Desktop App. Not a App from Microsoft Store.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occurred while processing PST file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        public bool IsOutlookInstalled()
+        {
+            const string outlookRegistryKeyPath = @"SOFTWARE\Microsoft\Office\Outlook";
+            const string outlookRegistryKeyPath64Bit = @"SOFTWARE\Wow6432Node\Microsoft\Office\Outlook";
+
+            return Registry.LocalMachine.OpenSubKey(outlookRegistryKeyPath) != null ||
+                   Registry.LocalMachine.OpenSubKey(outlookRegistryKeyPath64Bit) != null;
         }
 
         private string[] GetEmailAddressesFromFolder(Outlook.Folder folder)
