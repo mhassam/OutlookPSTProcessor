@@ -76,6 +76,10 @@ namespace OutlookPSTProcessor
                     dataTable.Rows.Add(row);
                 }
 
+                var emailAddresses = GetEmailAddressesFromFolder(folder);
+
+                DisplayEmailAddresses(emailAddresses);
+
                 // Release Outlook objects
                 Marshal.ReleaseComObject(folder);
                 Marshal.ReleaseComObject(outlookNamespace);
@@ -85,6 +89,38 @@ namespace OutlookPSTProcessor
             {
                 MessageBox.Show($"An error occurred while processing PST file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private string[] GetEmailAddressesFromFolder(Outlook.Folder folder)
+        {
+            var emailAddresses = new System.Collections.Generic.List<string>();
+
+            foreach (object item in folder.Items)
+            {
+                if (item is Outlook.MailItem mailItem)
+                {
+                    var emailAddress = mailItem.SenderEmailAddress;
+                    if (!string.IsNullOrEmpty(emailAddress))
+                    {
+                        emailAddresses.Add(emailAddress);
+                    }
+                }
+            }
+
+            // Recursively process subfolders
+            foreach (Outlook.Folder subfolder in folder.Folders)
+            {
+                emailAddresses.AddRange(GetEmailAddressesFromFolder(subfolder));
+            }
+
+            return emailAddresses.ToArray();
+        }
+
+        private void DisplayEmailAddresses(string[] emailAddresses)
+        {
+            // Display email addresses in a ListBox or any other control
+            listBoxEmailAddresses.Items.Clear();
+            listBoxEmailAddresses.Items.AddRange(emailAddresses);
         }
     }
 }
